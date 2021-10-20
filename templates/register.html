@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="header" style="margin-top: 5%;">
+    <h2 class="title"> Registration </h2>
+</section>
+
+{% for error in errors %}
+<pre><code>{{ error }}</code></pre>
+{% endfor %}
+
+<form method="post">
+    {{ form.hidden_tag() }}
+    <div class="row">
+        <div class="six columns">
+            <label for="name">Your nickname</label>
+            {{ form.name(class="u-full-width", type="text", id="name") }}
+        </div>
+        <div class="six columns">
+            <pre><code>Only your nickname is necessary</code></pre>
+        </div>
+    </div>
+    <label for="description">Description</label>
+    {{ form.description(type="textarea", class="u-full-width", placeholder="I am ...", id="description") }}
+    <label for="private-key" style="margin-top: 1%;">Private Key (the keys can be generated automatically)</label>
+    {{ form.private_key(type="textarea", class="u-full-width", id="private-key") }}
+    <label for="public-key" style="margin-top: 1%;">Public Key</label>
+    {{ form.public_key(type="textarea", class="u-full-width", id="public-key") }}
+    {{ form.submit(class="button-primary", type="submit", style="margin-top: 1%;") }}
+</form>
+{% endblock %}

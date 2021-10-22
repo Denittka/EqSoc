@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="header" style="margin-top: 5%;">
+    <h2 class="title"> Oooops... </h2>
+    <h5> There was an error in your port number. Let's try a new one!</h5>
+</section>
+
+{% for error in errors %}
+<pre><code>{{ error }}</code></pre>
+{% endfor %}
+
+<form method="post">
+    {{ form.hidden_tag() }}
+    <div class="row" style="margin-top: 5%;">
+        <div class="twelve columns" align="middle">
+            <label for="port">A Port Number</label>
+            {{ form.port(class="u-full-width", type="number", id="port") }}
+        </div>
+    </div>
+    {{ form.submit(class="button-primary", type="submit", style="margin-top: 2%;") }}
+</form>
+{% endblock %}

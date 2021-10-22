@@ -4,6 +4,14 @@ from .db_session import SqlAlchemyBase
 from flask_login import UserMixin
 
 
+class Peer(SqlAlchemyBase, SerializerMixin):
+    __tablename__ = "peers"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    address = Column(String)
+    port = Column(Integer)
+    pubkey = Column(String)
+
+
 class Message(UserMixin, SqlAlchemyBase, SerializerMixin):
     __tablename__ = "messages"
     id = Column(Integer, primary_key=True, autoincrement=True)

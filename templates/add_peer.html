@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="header" style="margin-top: 5%;">
+    <h2 class="title"> Add Peer </h2>
+</section>
+
+{% for error in errors %}
+<pre><code>{{ error }}</code></pre>
+{% endfor %}
+
+<form method="post">
+    {{ form.hidden_tag() }}
+    <div class="row">
+        <div class="six columns">
+            <label for="address">The Address</label>
+            {{ form.address(class="u-full-width", type="text", id="address") }}
+        </div>
+        <div class="one column">
+            <label for="port">Port</label>
+            {{ form.port(class="u-full-width", type="number", id="port") }}
+        </div>
+    </div>
+    {{ form.submit(class="button-primary", type="submit", style="margin-top: 1%;") }}
+</form>
+{% endblock %}

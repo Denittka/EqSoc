@@ -17,7 +17,7 @@ class Server:
     def ask_for_pubkey(self, address, port, my_pubkey):
         try:
             self.client.connect((address, port))
-            self.client.send(bytes("1", encoding="utf-8"))
+            self.client.send(bytes("0", encoding="utf-8"))
             pubkey = str(self.client.recv(4096), encoding="utf-8")
             self.client.send(bytes(my_pubkey, encoding="utf-8"))
             return pubkey
@@ -34,24 +34,29 @@ class Server:
             result = pubkey
         return result
 
-    def handle_connection(self, conn, addr):
-        while True:
+    def handle_connection(self, conn, addr, index):
+        data = str(conn.recv(1024), encoding="utf-8")
+        print("got enter")
+        if data == "0":
+            print("sending pubkey")
+            conn.send(bytes(self.handle_request(data), encoding="utf-8"))
+            print("sent pubkey\ncatching pubkey")
             data = str(conn.recv(1024), encoding="utf-8")
-            if data == "0":
-                conn.send(bytes(self.handle_request(data), encoding="utf-8"))
-                data = str(conn.recv(1024), encoding="utf-8")
-                session = create_session()
-                peer = Peer()
-                peer.address = addr[0]
-                peer.port = addr[1]
-                peer.pubkey = data
-                session.add(peer)
-                session.commit()
+            print("got pubkey")
+            session = create_session()
+            peer = Peer()
+            peer.address = addr[0]
+            peer.port = addr[1]
+            peer.pubkey = data
+            session.add(peer)
+            session.commit()
+        conn.close()
+        del self.connections[index]
 
     def loop(self):
         while True:
             conn, addr = self.sock.accept()
-            thread = Thread(target=self.handle_connection, args=(conn, addr))
+            thread = Thread(target=self.handle_connection, args=(conn, addr, len(self.connections)))
             thread.start()
             self.connections += [(conn, addr, thread)]
 
@@ -60,7 +65,6 @@ class Server:
         config.read("./config.ini")
         port = int(config["SERVER"]["port"])
         address = config["SERVER"]["address"]
-        print(address)
         try:
             self.sock.bind((address, port))
             self.sock.listen(10)

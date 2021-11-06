@@ -3,6 +3,11 @@ from wtforms import StringField, SubmitField, TextAreaField, IntegerField
 from wtforms.validators import DataRequired
 
 
+class SearchForm(FlaskForm):
+    search = StringField("Search", validators=[DataRequired()])
+    submit = SubmitField("Search")
+
+
 class NewPort(FlaskForm):
     port = IntegerField("Port", validators=[DataRequired()])
     submit = SubmitField("Try on")
@@ -13,7 +18,7 @@ class Follow(FlaskForm):
 
 
 class NewPostForm(FlaskForm):
-    text = StringField("Enter the text", validators=[DataRequired()])
+    text = TextAreaField("Enter the text", validators=[DataRequired()])
     submit = SubmitField("Post")
 
 

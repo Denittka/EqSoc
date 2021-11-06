@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<section class="header" style="margin-top: 5%;">
+    <h3 class="title"> {{ user.name }} </h3>
+    <pre><code>{{ user.description }}</code></pre>
+</section>
+
+{% for post in posts %}
+<div>
+    <h5>{{ user.name }}</h5>
+    <p>{{ post.text }}</p>
+    <hr/>
+</div>
+{% endfor %}
+{% endblock %}

@@ -2,7 +2,7 @@ import socket
 from threading import Thread
 from configparser import ConfigParser
 from data.db_session import create_session
-from data.__all_models import User
+from data.__all_models import User, Peer
 
 
 class Server:
@@ -10,14 +10,16 @@ class Server:
         self.initialized = False
         self.port = None
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.client = socket.socket()
         self.connections = []
         self.accepting = None
 
-    def ask_for_pubkey(self, address, port):
+    def ask_for_pubkey(self, address, port, my_pubkey):
         try:
-            self.sock.connect((address, port))
-            self.sock.send(bytes("1", encoding="utf-8"))
-            pubkey = str(self.sock.recv(4096), encoding="utf-8")
+            self.client.connect((address, port))
+            self.client.send(bytes("1", encoding="utf-8"))
+            pubkey = str(self.client.recv(4096), encoding="utf-8")
+            self.client.send(bytes(my_pubkey, encoding="utf-8"))
             return pubkey
         except ConnectionAbortedError:
             return -1
@@ -35,7 +37,16 @@ class Server:
     def handle_connection(self, conn, addr):
         while True:
             data = str(conn.recv(1024), encoding="utf-8")
-            conn.send(bytes(self.handle_request(data), encoding="utf-8"))
+            if data == "0":
+                conn.send(bytes(self.handle_request(data), encoding="utf-8"))
+                data = str(conn.recv(1024), encoding="utf-8")
+                session = create_session()
+                peer = Peer()
+                peer.address = addr[0]
+                peer.port = addr[1]
+                peer.pubkey = data
+                session.add(peer)
+                session.commit()
 
     def loop(self):
         while True:
@@ -48,8 +59,10 @@ class Server:
         config = ConfigParser()
         config.read("./config.ini")
         port = int(config["SERVER"]["port"])
+        address = config["SERVER"]["address"]
+        print(address)
         try:
-            self.sock.bind(("127.0.0.1", port))
+            self.sock.bind((address, port))
             self.sock.listen(10)
             self.port = port
             self.initialized = True

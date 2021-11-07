@@ -2,9 +2,10 @@ from sqlalchemy import Column, Integer, Text, DateTime, String, Boolean, Foreign
 from sqlalchemy_serializer import SerializerMixin
 from .db_session import SqlAlchemyBase
 from flask_login import UserMixin
+from flask_login import current_user
 
 
-class Peer(SqlAlchemyBase, SerializerMixin):
+class Peer(SqlAlchemyBase, SerializerMixin, UserMixin):
     __tablename__ = "peers"
     id = Column(Integer, primary_key=True, autoincrement=True)
     address = Column(String)
@@ -25,7 +26,6 @@ class Post(UserMixin, SqlAlchemyBase, SerializerMixin):
     id = Column(Integer, primary_key=True, autoincrement=True)
     author = Column(Integer)
     text = Column(Text)
-    datetime = Column(DateTime)
 
 
 class Follow(SqlAlchemyBase, SerializerMixin):

@@ -13,7 +13,7 @@ class NewPort(FlaskForm):
     submit = SubmitField("Try on")
 
 
-class Follow(FlaskForm):
+class FollowForm(FlaskForm):
     submit = SubmitField("Follow")
 
 

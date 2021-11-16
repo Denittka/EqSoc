@@ -1,14 +1,15 @@
-from data.forms import RegistrationForm, AddPeerForm, NewPort, SearchForm, NewPostForm
+from data.forms import RegistrationForm, AddPeerForm, SearchForm, NewPostForm, FollowForm
 from flask_login import LoginManager, current_user, login_required, login_user
 from data.db_session import create_session, global_init
 from flask import Flask, redirect, render_template
-from data.__all_models import User, Peer, Post
+from data.__all_models import User, Peer, Post, Follow
 from eqengine import Server, search, ask_for_pubkey
 from functools import wraps
+from configparser import ConfigParser
 import atexit
 
 app = Flask(__name__, static_folder="static")
-app.config['SECRET_KEY'] = 'piuhPIDFUSHG<-I\'llNeverBeAloneAgain?->KOJDSkfoijds'
+app.config['SECRET_KEY'] = 'piuhPIDFUSHG<-I\'Youllalwaysbethatstate?->KOJDSkfoijds'
 login_manager = LoginManager()
 login_manager.init_app(app)
 server = Server()
@@ -18,11 +19,10 @@ port = server.initialize()
 def __search(session, form):
     # Function of searching.
     if form.validate_on_submit():
-        results = search(form.search.data)
+        results = search(form.search.data, [], server.address, server.port)
         for i in range(len(results)):
-            current_author = session.query(User).get(results[i].author)
-            results[i].name = current_author.name
-            results[i].author = current_author.id
+            current_author = session.query(User).get(results[i]["author"])
+            results[i]["name"] = current_author.name
         return results
 
 
@@ -120,6 +120,7 @@ def add_peer():
 @login_required
 def index():
     # The main page itself.
+    server.refresh()
     search_form = SearchForm()
     session = create_session()
     results = __search(session, search_form)
@@ -146,17 +147,32 @@ def index():
 def user(user_id: int):
     # The page of a user.
     search_form = SearchForm()
+    follow = FollowForm()
     session = create_session()
+    following = session.query(Follow).filter(Follow.follower == current_user.id and Follow.followed == user_id).first()
+    is_followed = False if following is None else True
     results = __search(session, search_form)
     if results is not None and len(results) != 0:
         return render_template("search.html", results=results, search=SearchForm())
-    current_user = session.query(User).get(user_id)
-    if current_user is None:
-        current_user = User()
-        current_user.name = "Error"
-        current_user.description = "Error"
-    posts = session.query(Post).filter(Post.author == current_user.id).all()
-    return render_template("user.html", user=current_user, search=search_form, posts=posts)
+    got_user = session.query(User).get(user_id)
+    if follow.validate_on_submit():
+        if is_followed:
+            session.delete(following)
+            session.commit()
+        else:
+            new_follow = Follow()
+            new_follow.follower = current_user.id
+            new_follow.followed = user_id
+            session.add(new_follow)
+            session.commit()
+        return redirect(f"/user/{str(user_id)}")
+    if got_user is None:
+        got_user = User()
+        got_user.name = "Error"
+        got_user.description = "Error"
+    posts = session.query(Post).filter(Post.author == got_user.id).all()
+    return render_template("user.html", user=got_user, search=search_form, posts=posts, follow=follow,
+                           is_followed=is_followed, current_user=current_user)
 
 
 def shutdown():
@@ -169,4 +185,7 @@ def shutdown():
 if __name__ == '__main__':
     atexit.register(shutdown)   # Registering the join functions.
     global_init("db/database.db")
-    app.run(port=5001)
+    parser = ConfigParser()
+    parser.read("config.ini")
+    flask_port = int(parser["SERVER"]["flaskPort"])
+    app.run(port=flask_port)

@@ -8,8 +8,8 @@
 
 {% for post in results %}
 <div>
-    <h5><a href="/user/{{ post.author }}">{{ post.name }}</a></h5>
-    <p>{{ post.text }}</p>
+    <h5><a href="/user/{{ post['author'] }}">{{ post["name"] }}</a></h5>
+    <p>{{ post["text"] }}</p>
     <hr/>
 </div>
 {% endfor %}

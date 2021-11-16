@@ -32,4 +32,4 @@ class Follow(SqlAlchemyBase, SerializerMixin):
     __tablename__ = "follows"
     id = Column(Integer, primary_key=True, autoincrement=True)
     follower = Column(Integer, ForeignKey("users.id"), nullable=False)
-    follower = Column(Integer, ForeignKey("users.id"), nullable=False)
+    followed = Column(Integer, ForeignKey("users.id"), nullable=False)

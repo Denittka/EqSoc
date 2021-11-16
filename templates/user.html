@@ -5,6 +5,16 @@
 <section class="header" style="margin-top: 5%;">
     <h3 class="title"> {{ user.name }} </h3>
     <pre><code>{{ user.description }}</code></pre>
+    {% if current_user.id != user.id %}
+    <form method="post">
+        {{ follow.hidden_tag() }}
+        {% if is_followed %}
+        {{ follow.submit(type="submit", placeholder="Unfollow", class="button") }}
+        {% else %}
+        {{ follow.submit(type="submit", placeholder="Follow", class="button button-primary") }}
+        {% endif %}
+    </form>
+    {% endif %}
     <hr/>
 </section>
 

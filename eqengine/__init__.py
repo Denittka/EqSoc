@@ -4,6 +4,15 @@ from configparser import ConfigParser
 from data.db_session import create_session
 from data.__all_models import User, Peer, Post
 import sqlalchemy
+import rsa
+
+
+def verify(message, signature, pubkey):
+    try:
+        rsa.verify(message, signature, pubkey)
+        return True
+    except rsa.pkcs1.VerificationError:
+        return False
 
 
 def ask_for_pubkey(address, port, my_pubkey):
@@ -58,13 +67,16 @@ def ask_for_user(address, port, pubkey):
     return 0
 
 
-def search(text):
+def search(text, except_list, self_address, self_port):
     # Search for the requested text.
     session = create_session()
     peers = session.query(Peer).all()
     result = []
     people = []
+    except_list += [(self_address, self_port)]
     for peer in peers:
+        if (peer.address, peer.port) in except_list:
+            continue
         # * - Ask for with the code -> P
         # * <- Get a response - P
         # * - Send the request -> P
@@ -77,6 +89,13 @@ def search(text):
         client.send(bytes("\x02", encoding="utf-8"))
         client.recv(1024)
         client.send(bytes(text, encoding="utf-8"))
+        client.recv(1024)
+        for passed in except_list:
+            client.send(bytes(passed[0], encoding="utf-8"))
+            client.recv(1024)
+            client.send(bytes(str(passed[1]), encoding="utf-8"))
+            client.recv(1024)
+        client.send(bytes("\x01", encoding="utf-8"))
         while True:
             data = client.recv(1024)
             if data == bytes("\x01", encoding="utf-8"):
@@ -120,15 +139,23 @@ def search(text):
             if len(current_posts) == 0:
                 session.add(post)
         session.commit()
-    return result
+    return_results = []
+    for post in result:
+        return_results += [{"author": post.author, "text": post.text}]
+    return return_results
 
 
 class Server:
     def __init__(self):
         self.initialized = False
+        self.address = None
+        self.port = None
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.connections = []
         self.accepting = None
+
+    def refresh(self):
+        pass
 
     def handle_user_request(self, conn, session):
         # * <- Get a response - S
@@ -168,7 +195,17 @@ class Server:
         # * <- Get an ending byte - S
         conn.send(bytes(1))
         text = str(conn.recv(1024), encoding="utf-8")
-        search(text)
+        except_list = []
+        conn.send(bytes(1))
+        while True:
+            address = str(conn.recv(1024), encoding="utf-8")
+            if address == "\x01":
+                break
+            conn.send(bytes(1))
+            port = int(str(conn.recv(1024), encoding="utf-8"))
+            conn.send(bytes(1))
+            except_list += [(address, port)]
+        search(text, except_list, self.address, self.port)
         posts = session.query(Post).filter(sqlalchemy.func.lower(Post.text).like("%" + text.lower() + "%")).all()
         people = []
         for post in posts:
@@ -221,6 +258,8 @@ class Server:
         address = config["SERVER"]["address"]
         try:
             self.sock.bind((address, port))
+            self.address = address
+            self.port = port
             self.sock.listen(10)
             self.initialized = True
         except OSError:

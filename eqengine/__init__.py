@@ -8,8 +8,9 @@ import rsa
 
 
 def verify(message, signature, pubkey):
+    pubkey = rsa.PublicKey.load_pkcs1_openssl_pem(pubkey)
     try:
-        rsa.verify(message, signature, pubkey)
+        rsa.verify(message.encode(), bytes(signature, encoding="cp855"), pubkey)
         return True
     except rsa.pkcs1.VerificationError:
         return False
@@ -122,6 +123,8 @@ def search(text, except_list, self_address, self_port):
             post.text = str(data, encoding="utf-8")
             client.send(bytes(1))
             post.author = int(str(client.recv(1024), encoding="utf-8"))
+            client.send(bytes(1))
+            post.sign = str(client.recv(1024), encoding="utf-8")
             result += [post]
             client.send(bytes(1))
         client.close()
@@ -136,7 +139,7 @@ def search(text, except_list, self_address, self_port):
                     searched_author = session.query(User).filter(User.pubkey == author.pubkey).first()
             post.author = searched_author.id
             current_posts = session.query(Post).filter(Post.text == post.text and Post.author == post.author).all()
-            if len(current_posts) == 0:
+            if len(current_posts) == 0 and verify(post.text, post.sign, searched_author.pubkey):
                 session.add(post)
         session.commit()
     return_results = []
@@ -228,6 +231,8 @@ class Server:
             conn.send(bytes(post.text, encoding="utf-8"))
             conn.recv(1024)
             conn.send(bytes(str(post.author), encoding="utf-8"))
+            conn.recv(1024)
+            conn.send(bytes(post.sign, encoding="utf-8"))
             conn.recv(1024)
         conn.send(bytes("\x01", encoding="utf-8"))
 

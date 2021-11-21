@@ -26,6 +26,7 @@ class Post(UserMixin, SqlAlchemyBase, SerializerMixin):
     id = Column(Integer, primary_key=True, autoincrement=True)
     author = Column(Integer)
     text = Column(Text)
+    sign = Column(Text)
 
 
 class Follow(SqlAlchemyBase, SerializerMixin):

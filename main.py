@@ -7,6 +7,7 @@ from eqengine import Server, search, ask_for_pubkey
 from functools import wraps
 from configparser import ConfigParser
 import atexit
+import rsa
 
 app = Flask(__name__, static_folder="static")
 app.config['SECRET_KEY'] = 'piuhPIDFUSHG<-I\'Youllalwaysbethatstate?->KOJDSkfoijds'
@@ -80,7 +81,7 @@ def register():
         new_user.pubkey = form.public_key.data.strip()
         session.add(new_user)
         session.commit()
-        file = open("data/private_key.dat", "w")
+        file = open("data/private.pem", "w")
         file.write(form.private_key.data)
         file.close()
         login_user(new_user)
@@ -136,6 +137,8 @@ def index():
         post = Post()
         post.text = form.text.data
         post.author = current_user.id
+        privkey = rsa.PrivateKey.load_pkcs1(bytes(open("data/private.pem").read(), encoding="utf-8"))
+        post.sign = str(rsa.sign(post.text.encode(), privkey, "SHA-1"), encoding="cp855")
         session.add(post)
         session.commit()
         return redirect("/")

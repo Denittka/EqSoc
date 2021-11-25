@@ -3,7 +3,7 @@ from flask_login import LoginManager, current_user, login_required, login_user
 from data.db_session import create_session, global_init
 from flask import Flask, redirect, render_template
 from data.__all_models import User, Peer, Post, Follow
-from eqengine import Server, search, ask_for_pubkey
+from eqengine import Server, search, ask_for_pubkey, ask_for_users_posts
 from functools import wraps
 from configparser import ConfigParser
 import atexit
@@ -137,7 +137,11 @@ def index():
         post = Post()
         post.text = form.text.data
         post.author = current_user.id
-        privkey = rsa.PrivateKey.load_pkcs1(bytes(open("data/private.pem").read(), encoding="utf-8"))
+        try:
+            privkey = rsa.PrivateKey.load_pkcs1(bytes(open("data/private.pem").read(), encoding="utf-8"))
+        except ValueError:
+            return render_template("index.html", search=search_form, form=form, posts=posts,
+                                   error="There is a problem with your private key")
         post.sign = str(rsa.sign(post.text.encode(), privkey, "SHA-1"), encoding="cp855")
         session.add(post)
         session.commit()
@@ -173,6 +177,8 @@ def user(user_id: int):
         got_user = User()
         got_user.name = "Error"
         got_user.description = "Error"
+    else:
+        ask_for_users_posts(got_user.id)
     posts = session.query(Post).filter(Post.author == got_user.id).all()
     return render_template("user.html", user=got_user, search=search_form, posts=posts, follow=follow,
                            is_followed=is_followed, current_user=current_user)

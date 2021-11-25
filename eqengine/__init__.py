@@ -7,6 +7,39 @@ import sqlalchemy
 import rsa
 
 
+def post_without_id(post):
+    post.id = None
+    return post
+
+
+def ask_for_users_posts(author):
+    session = create_session()
+    pubkey = session.query(User).get(author).pubkey
+    peers = session.query(Peer).all()
+    for peer in peers:
+        client = socket.socket()
+        client.connect((peer.address, int(peer.port)))
+        client.send("\x04".encode())
+        client.recv(1024)
+        client.send(pubkey.encode())
+        while True:
+            post = Post()
+            text = client.recv(1024)
+            if text == bytes(1):
+                break
+            post.text = str(text, encoding="utf-8")
+            post.author = author
+            client.send(bytes(1))
+            post.sign = str(client.recv(1024), encoding="utf-8")
+            client.send(bytes(1))
+            verify(post.text, post.sign, pubkey)
+            if session.query(Post).filter(Post.text == post.text and Post.author == post.author).first() is None \
+                    and verify(post.text, post.sign, pubkey):
+                session.add(post)
+        session.commit()
+        client.close()
+
+
 def verify(message, signature, pubkey):
     pubkey = rsa.PublicKey.load_pkcs1_openssl_pem(pubkey)
     try:
@@ -236,6 +269,21 @@ class Server:
             conn.recv(1024)
         conn.send(bytes("\x01", encoding="utf-8"))
 
+    def handle_users_posts_request(self, conn, session):
+        conn.send(bytes(1))
+        pubkey = str(conn.recv(1024), encoding="utf-8")
+        got_user = session.query(User).filter(User.pubkey == pubkey).first()
+        if got_user is None:
+            conn.send(bytes(1))
+            return
+        posts = session.query(Post).filter(Post.author == got_user.id).all()
+        for post in posts:
+            conn.send(post.text.encode())
+            conn.recv(1024)
+            conn.send(post.sign.encode())
+            conn.recv(1024)
+        conn.send(bytes(1))
+
     def handle_connection(self, conn, index):
         # * - Ask for with the code -> S
         session = create_session()
@@ -246,6 +294,8 @@ class Server:
             self.handle_search_request(conn, session)
         if code == bytes("\x03", encoding="utf-8"):
             self.handle_user_request(conn, session)
+        if code == bytes("\x04", encoding="utf-8"):
+            self.handle_users_posts_request(conn, session)
         conn.close()
         del self.connections[index]
 

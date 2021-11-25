@@ -9,9 +9,9 @@
     <form method="post">
         {{ follow.hidden_tag() }}
         {% if is_followed %}
-        {{ follow.submit(type="submit", placeholder="Unfollow", class="button") }}
+        {{ follow.submit(type="submit", value="Unfollow", class="button") }}
         {% else %}
-        {{ follow.submit(type="submit", placeholder="Follow", class="button button-primary") }}
+        {{ follow.submit(type="submit", value="Follow", class="button button-primary") }}
         {% endif %}
     </form>
     {% endif %}

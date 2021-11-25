@@ -22,9 +22,9 @@
     </div>
     <label for="description">Description</label>
     {{ form.description(type="textarea", class="u-full-width", placeholder="I am ...", id="description") }}
-    <label for="private-key" style="margin-top: 1%;">Private Key (the keys can be generated automatically)</label>
+    <label for="private-key" style="margin-top: 1%;">Private Key</label>
     {{ form.private_key(type="textarea", class="u-full-width", id="private-key") }}
-    <label for="public-key" style="margin-top: 1%;">Public Key</label>
+    <label for="public-key" style="margin-top: 1%;">Public Key (OpenSSL)</label>
     {{ form.public_key(type="textarea", class="u-full-width", id="public-key") }}
     {{ form.submit(class="button-primary", type="submit", style="margin-top: 1%;") }}
 </form>

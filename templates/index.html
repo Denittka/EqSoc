@@ -1,6 +1,9 @@
 {% extends "base.html" %}
 
 {% block content %}
+{% if error %}
+<pre><code>{{ error }}</code></pre>
+{% endif %}
 <form method="post">
     {{ form.hidden_tag() }}
     <label for="text">What's new?</label>

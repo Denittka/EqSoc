@@ -182,10 +182,10 @@ def search(text, except_list, self_address, self_port):
 
 
 class Server:
-    def __init__(self):
+    def __init__(self, port, address):
         self.initialized = False
-        self.address = None
-        self.port = None
+        self.address = address
+        self.port = port
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.connections = []
         self.accepting = None
@@ -309,8 +309,14 @@ class Server:
     def initialize(self):
         config = ConfigParser()
         config.read("./config.ini")
-        port = int(config["SERVER"]["port"])
-        address = config["SERVER"]["address"]
+        if self.port is None:
+            port = int(config["SERVER"]["port"])
+        else:
+            port = self.port
+        if self.address is None:
+            address = config["SERVER"]["address"]
+        else:
+            address = self.address
         try:
             self.sock.bind((address, port))
             self.address = address

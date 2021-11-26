@@ -30,6 +30,11 @@ class RegistrationForm(FlaskForm):
     submit = SubmitField("Sign Up")
 
 
+class LoginForm(FlaskForm):
+    password = StringField("The Password", validators=[DataRequired()])
+    submit = SubmitField("Login")
+
+
 class AddPeerForm(FlaskForm):
     address = StringField("Peer's Address", validators=[DataRequired()])
     port = IntegerField("Port", validators=[DataRequired()])

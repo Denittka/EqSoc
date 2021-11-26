@@ -1,5 +1,5 @@
-from data.forms import RegistrationForm, AddPeerForm, SearchForm, NewPostForm, FollowForm
-from flask_login import LoginManager, current_user, login_required, login_user
+from data.forms import RegistrationForm, AddPeerForm, SearchForm, NewPostForm, FollowForm, LoginForm
+from flask_login import LoginManager, current_user, login_required, login_user, logout_user
 from data.db_session import create_session, global_init
 from flask import Flask, redirect, render_template
 from data.__all_models import User, Peer, Post, Follow
@@ -8,13 +8,25 @@ from functools import wraps
 from configparser import ConfigParser
 import atexit
 import rsa
+import argparse
 
+
+args_parser = argparse.ArgumentParser()
+args_parser.add_argument("--flaskport", "-fp", type=int)
+args_parser.add_argument("--flaskaddress", "-fa", type=str)
+args_parser.add_argument("--serveraddress", "-sa", type=str)
+args_parser.add_argument("--serverport", "-sp", type=int)
+args_parser.add_argument("--db", type=str)
+args = args_parser.parse_args()
 app = Flask(__name__, static_folder="static")
 app.config['SECRET_KEY'] = 'piuhPIDFUSHG<-I\'Youllalwaysbethatstate?->KOJDSkfoijds'
 login_manager = LoginManager()
 login_manager.init_app(app)
-server = Server()
+server = Server(args.serverport, args.serveraddress)
 port = server.initialize()
+config_parser = ConfigParser()
+config_parser.read("config.ini")
+secure = config_parser["SECURITY"]["secure"]
 
 
 def __search(session, form):
@@ -55,6 +67,26 @@ def load_user(user_id):
     return session.query(User).get(user_id)
 
 
+@app.route("/login", methods=['GET', 'POST'])
+def login():
+    session = create_session()
+    search_form = SearchForm()
+    check_user = session.query(User).get(1)
+    if check_user is None:
+        return redirect("/register")
+    if current_user.is_authenticated:
+        return redirect("/")
+    form = LoginForm()
+    if form.validate_on_submit():
+        password = config_parser["SECURITY"]["password"]
+        if password == form.password.data:
+            login_user(check_user)
+            return redirect("/")
+        else:
+            return render_template("login.html", form=form, search=search_form, error="Wrong Password")
+    return render_template("login.html", form=form, search=search_form)
+
+
 @login_manager.unauthorized_handler
 @app.route("/register", methods=['GET', 'POST'])
 def register():
@@ -64,7 +96,10 @@ def register():
     session = create_session()
     check_user = session.query(User).get(1)
     if check_user is not None:
-        login_user(check_user)
+        if secure != "True":
+            login_user(check_user)
+        else:
+            return redirect("/login")
     if current_user.is_authenticated:   # Does not allow a user to register a new user.
         return redirect("/")
     results = __search(session, search_form)
@@ -184,6 +219,13 @@ def user(user_id: int):
                            is_followed=is_followed, current_user=current_user)
 
 
+@app.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    return redirect("/")
+
+
 def shutdown():
     # Threading needs to have the join function anywhere in the code. So it's here.
     server.accepting.join()
@@ -193,8 +235,16 @@ def shutdown():
 
 if __name__ == '__main__':
     atexit.register(shutdown)   # Registering the join functions.
-    global_init("db/database.db")
-    parser = ConfigParser()
-    parser.read("config.ini")
-    flask_port = int(parser["SERVER"]["flaskPort"])
-    app.run(port=flask_port)
+    if args.db:
+        global_init(f"db/{args.db}")
+    else:
+        global_init("db/database.db")
+    if args.flaskport:
+        flask_port = args.flaskport
+    else:
+        flask_port = int(config_parser["FLASK"]["flaskPort"])
+    if args.flaskaddress:
+        host = args.flaskaddress
+    else:
+        host = config_parser["FLASK"]["address"]
+    app.run(port=flask_port, host=host)

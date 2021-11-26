@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% if error %}
+<pre><code>{{ error }}</code></pre>
+{% endif %}
+<form method="post">
+    {{ form.hidden_tag() }}
+    <label for="text">What's new?</label>
+    {{ form.text(type="textarea", class="u-full-width", id="text", placeholder="Today I neutralized a leftist...") }}
+    {{ form.submit(class="button-primary", type="submit", style="margin-top: 1%;") }}
+</form>
+
+{% for post in posts %}
+<div>
+    <h5><a href="/user/{{ post.author }}">{{ post.name }}</a></h5>
+    <p>{{ post.text }}</p>
+    <hr/>
+</div>
+{% endfor %}
+{% endblock %}

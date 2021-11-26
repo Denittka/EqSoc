@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" type="text/css" href="/static/skeleton.css"/>
+    <link rel="stylesheet" type="text/css" href="/static/normalize.css"/>
+    <link rel="stylesheet" type="text/css" href="/static/custom.css"/>
+</head>
+<body>
+<header style="margin-top: 1%;">
+        <div class="container">
+            <div class="row">
+                <div class="four columns" align="middle">
+                    <a href="/user/1" class="button">Account</a>
+                </div>
+                <div class="four columns" align="middle">
+                    <a href="/" class="button">Posts</a>
+                </div>
+                <form method="post">
+                    {{ search.hidden_tag() }}
+                    <div class="three columns" align="right">
+                        {{ search.search(type="text", class="u-full-width", placeholder="Good night top side...") }}
+                    </div>
+                    <div class="one column" align="left">
+                        {{ search.submit(type="submit", placeholder="Search") }}
+                    </div>
+                </form>
+            </div>
+            <hr/>
+        </div>
+</header>
+<div class="container">
+    {% block content %}{% endblock %}
+</div>
+</body>
+</html>

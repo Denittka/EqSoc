@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<section class="header" style="margin-top: 5%;">
+    <h3 class="title"> {{ user.name }} </h3>
+    <pre><code>{{ user.description }}</code></pre>
+    {% if current_user.id != user.id %}
+    <form method="post">
+        {{ follow.hidden_tag() }}
+        {% if is_followed %}
+        {{ follow.submit(type="submit", value="Unfollow", class="button") }}
+        {% else %}
+        {{ follow.submit(type="submit", value="Follow", class="button button-primary") }}
+        {% endif %}
+    </form>
+    {% endif %}
+    <hr/>
+</section>
+
+{% for post in posts %}
+<div>
+    <h5>{{ user.name }}</h5>
+    <p>{{ post.text }}</p>
+    <hr/>
+</div>
+{% endfor %}
+{% endblock %}

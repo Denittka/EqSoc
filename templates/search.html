@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="header" style="margin-top: 5%;">
+    <h2 class="title"> Results </h2>
+    <hr/>
+</section>
+
+{% for post in results %}
+<div>
+    <h5><a href="/user/{{ post['author'] }}">{{ post["name"] }}</a></h5>
+    <p>{{ post["text"] }}</p>
+    <hr/>
+</div>
+{% endfor %}
+
+{% endblock %}

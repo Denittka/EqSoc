@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<section class="header" style="margin-top: 5%;">
+    <h3 class="title">Settings</h3>
+</section>
+
+{% for set in settings %}
+<div class="row">
+    <div class="six columns u-full-width" align="right">
+        <h4>{{ set[0] }}</h4>
+    </div>
+    <div class="two columns button">
+        <a href="/{{ set[1] }}">Go</a>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}

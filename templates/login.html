@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="header" style="margin-top: 5%;">
+    <h2 class="title"> Secure Pass </h2>
+</section>
+
+{% if error %}
+<pre><code><div align="center">{{ error }}</div></code></pre>
+{% endif %}
+
+<form method="post">
+    {{ form.hidden_tag() }}
+    <div class="row">
+        <div class="six columns">
+            <label for="password">The Password</label>
+            {{ form.password(class="u-full-width", type="text", id="password") }}
+        </div>
+        <div class="two columns">
+            {{ form.submit(class="button-primary", type="submit", style="margin-top: 28%;") }}
+        </div>
+    </div>
+</form>
+{% endblock %}

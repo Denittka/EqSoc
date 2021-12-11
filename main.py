@@ -1,4 +1,4 @@
-from data.forms import RegistrationForm, AddPeerForm, SearchForm, NewPostForm, FollowForm, LoginForm
+from data.forms import RegistrationForm, AddPeerForm, SearchForm, NewPostForm, FollowForm, LoginForm, ChangePasswordForm
 from flask_login import LoginManager, current_user, login_required, login_user, logout_user
 from data.db_session import create_session, global_init
 from flask import Flask, redirect, render_template
@@ -6,6 +6,7 @@ from data.__all_models import User, Peer, Post, Follow
 from eqengine import Server, search, ask_for_pubkey, ask_for_users_posts
 from functools import wraps
 from configparser import ConfigParser
+from werkzeug.security import generate_password_hash, check_password_hash
 import atexit
 import rsa
 import argparse
@@ -79,7 +80,7 @@ def login():
     form = LoginForm()
     if form.validate_on_submit():
         password = config_parser["SECURITY"]["password"]
-        if password == form.password.data:
+        if check_password_hash(password, form.password.data):
             login_user(check_user)
             return redirect("/")
         else:
@@ -119,9 +120,58 @@ def register():
         file = open("data/private.pem", "w")
         file.write(form.private_key.data)
         file.close()
+        config_parser = ConfigParser()
+        config_parser.read("config.ini")
+        config_parser["SECURITY"]["password"] = generate_password_hash(form.new_password.data)
+        with open("config.ini", "w") as config:
+            config_parser.write(config)
         login_user(new_user)
         return redirect("/")
     return render_template("register.html", errors=[], form=form, search=search_form)
+
+
+@app.route("/set_password", methods=["GET", "POST"])
+@login_required
+@check
+def set_password():
+    # A page to change security settings for password.
+    search_form = SearchForm()
+    session = create_session()
+    results = __search(session, search_form)
+    if results is not None and len(results) != 0:
+        return render_template("search.html", results=results, search=SearchForm())
+    form = ChangePasswordForm()
+    config_parser = ConfigParser()
+    config_parser.read("config.ini")
+    # form.turn_on.data = True if config_parser["SECURITY"]["secure"] == "True" else False
+    if form.validate_on_submit():
+        config_parser = ConfigParser()
+        config_parser.read("config.ini")
+        print(form.turn_on.data)
+        if check_password_hash(config_parser["SECURITY"]["password"], form.new_password.data) is False and form.new_password.data != "":
+            config_parser["SECURITY"]["password"] = generate_password_hash(form.new_password.data)
+        config_parser["SECURITY"]["secure"] = "True" if form.turn_on.data else "False"
+        with open("config.ini", "w") as config:
+            config_parser.write(config)
+    return render_template("set_password.html", search=search_form, form=form)
+
+
+
+@app.route("/settings")
+@login_required
+@check
+def settings():
+    # A page to set some settings.
+    search_form = SearchForm()
+    session = create_session()
+    results = __search(session, search_form)
+    if results is not None and len(results) != 0:
+        return render_template("search.html", results=results, search=SearchForm())
+    settings = [
+    ("Add peer", "add_peer"),
+    ("Set Password", "set_password")
+    ]
+    return render_template("settings.html", search=search_form, settings=settings)
 
 
 @app.route("/add_peer", methods=["GET", "POST"])

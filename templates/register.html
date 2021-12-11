@@ -20,6 +20,15 @@
             <pre><code>Only your nickname is necessary</code></pre>
         </div>
     </div>
+    <div class="row">
+        <div class="six columns">
+            <label for="password">Password</label>
+            {{ form.new_password(class="u-full-width", type="text", id="password") }}
+        </div>
+        <div class="six columns">
+            <pre><code>This is used for security of the server</code></pre>
+        </div>
+    </div>
     <label for="description">Description</label>
     {{ form.description(type="textarea", class="u-full-width", placeholder="I am ...", id="description") }}
     <label for="private-key" style="margin-top: 1%;">Private Key</label>

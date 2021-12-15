@@ -18,7 +18,10 @@ def ask_for_users_posts(author):
     peers = session.query(Peer).all()
     for peer in peers:
         client = socket.socket()
-        client.connect((peer.address, int(peer.port)))
+        try:
+            client.connect((peer.address, int(peer.port)))
+        except ConnectionRefusedError:
+            continue
         client.send("\x04".encode())
         client.recv(1024)
         client.send(pubkey.encode())
@@ -45,17 +48,15 @@ def verify(message, signature, pubkey):
     try:
         rsa.verify(message.encode(), bytes(signature, encoding="cp855"), pubkey)
         return True
-    except rsa.pkcs1.VerificationError:
+    except rsa.pkcs1.VerificationError as error:
         return False
 
 
-def ask_for_pubkey(address, port, my_pubkey):
+def ask_for_pubkey(address, port, my_pubkey, server_port, server_address):
     # Function of asking the peer for its pubkey.
     try:
         parser = ConfigParser()
         parser.read("config.ini")
-        server_address = parser["SERVER"]["address"]
-        server_port = parser["SERVER"]["port"]
         # * - Ask for pubkey with the code -> P
         # * <- Get the peer's pubkey - P
         # * - Send user's own pubkey -> P
@@ -162,7 +163,10 @@ def search(text, except_list, self_address, self_port):
             client.send(bytes(1))
         client.close()
         for post in result:
-            author = list(filter(lambda x: x.id == post.author, people))[0]
+            try:
+                author = list(filter(lambda x: x.id == post.author, people))[0]
+            except IndexError:
+                pass
             searched_author = session.query(User).filter(User.pubkey == author.pubkey).first()
             if searched_author is None:
                 committed = ask_for_user(peer.address, peer.port, author.pubkey)

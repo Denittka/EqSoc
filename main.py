@@ -191,7 +191,7 @@ def add_peer():
         peer.address = form.address.data
         peer.port = form.port.data
         my_pubkey = session.query(User).get(1).pubkey
-        peer.pubkey = ask_for_pubkey(peer.address, peer.port, my_pubkey)
+        peer.pubkey = ask_for_pubkey(peer.address, peer.port, my_pubkey, server.port, server.address)
         if peer.pubkey == -1:
             errors += ["This Peer does not answer"]
             return render_template("add_peer.html", form=form, errors=errors, search=search_form)
